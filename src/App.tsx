@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PartyConfig, Track, Persona } from './types';
+import { PartyConfig, Track } from './types';
 import { TRACK_CATALOG } from './data/tracks';
 import { PERSONAS } from './data/personas';
 import { generateSetlist } from './services/aiService';
@@ -15,9 +15,6 @@ export default function App() {
   const [view, setView] = useState<'landing' | 'dashboard' | 'setlist' | 'player'>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [allTracks, setAllTracks] = useState<Track[]>(TRACK_CATALOG);
-  const [userPersonas, setUserPersonas] = useState<Persona[]>(() => {
-    try { return JSON.parse(localStorage.getItem('djcopilot_user_personas') || '[]') as Persona[]; } catch { return []; }
-  });
   const [setlist, setSetlist] = useState<Track[]>([]);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -25,7 +22,7 @@ export default function App() {
     sources: ['Sound Benders Vault'],
     persona: 'hype',
     interactionLevel: 6,
-    transitions: ['Pitch/Tempo Sync', 'Scratching', 'EQ Blending', 'Laser Sweeps'],
+    transitions: ['Pitch/Tempo Sync', 'Scratching', 'EQ Blending'],
     partyType: '',
     guestOfHonor: '',
     mood: 'Unstoppable High Energy',
@@ -34,8 +31,7 @@ export default function App() {
     useGeminiAi: true
   });
 
-  const allPersonas = [...PERSONAS, ...userPersonas.filter(p => !PERSONAS.some(base => base.id === p.id))];
-  const activePersona = allPersonas.find(p => p.id === config.persona) || allPersonas[0];
+  const activePersona = PERSONAS.find(p => p.id === config.persona) || PERSONAS[0];
 
   const handleLogin = () => {
     soundFx.playLaser();
@@ -91,16 +87,7 @@ export default function App() {
   };
 
   const handleAddCustomTrack = (newTrack: Track) => {
-    setAllTracks(prev => [newTrack, ...prev.filter(t => t.id !== newTrack.id)]);
-  };
-
-  const handleAddTracks = (tracks: Track[]) => {
-    setAllTracks(prev => {
-      const incoming = tracks.filter(Boolean);
-      const byId = new Map(prev.map(track => [track.id, track]));
-      incoming.forEach(track => byId.set(track.id, track));
-      return Array.from(byId.values());
-    });
+    setAllTracks(prev => [newTrack, ...prev]);
   };
 
   const handleToggleMute = () => {
@@ -136,9 +123,6 @@ export default function App() {
             onGenerate={handleGenerate}
             isLoading={isLoading}
             onAddCustomTrack={handleAddCustomTrack}
-            onAddTracks={handleAddTracks}
-            userPersonas={userPersonas}
-            setUserPersonas={setUserPersonas}
           />
         )}
 
@@ -166,7 +150,6 @@ export default function App() {
               setView('dashboard');
             }}
             isMuted={isMuted}
-            userPersonas={userPersonas}
           />
         )}
       </main>
